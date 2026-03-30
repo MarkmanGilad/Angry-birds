@@ -219,7 +219,7 @@ class Environment:
             self.reward += REWARD_ALL_PIGS_DEAD
         if self.end_of_game(): 
             done = True
-        if self.tries == 0 and len(self.pigs) > 0: 
+        if self.tries <= 0 and len(self.pigs) > 0: 
             self.reward = REWARD_LOSS_PENALTY
         return self.reward, done
     
@@ -268,7 +268,7 @@ class Environment:
                 return False
         if len(self.pigs)==0:
             return True
-        if self.tries==0: 
+        if self.tries <= 0: 
             return True
         return False
     

@@ -66,11 +66,11 @@ def train():
         done = False
         while not done: # nor done:
             action = player.get_action(state_T, epoch=epoch, train=True)
-            env.move(action)
+            reward, done = env.move(action)
             shots_fired += 1
             episode_score += SCORE_BIRD_FIRED
             
-            while env.bird.move or not env.is_stable():
+            while not done and (env.bird.move or not env.is_stable()):
                 reward, done = env.move(None)
                 env.render()
             next_state_T = state.toTensor(env)
