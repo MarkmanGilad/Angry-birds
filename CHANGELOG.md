@@ -43,6 +43,14 @@ The training loop was broken — it was **not** a correct DQN or DDQN:
 - Loss now compares matching scalar Q-values per sample, as intended.
 - Eliminated the slow `player.get_actions()` loop from the training step.
 
+### Fixed infinite-episode bug (tries going negative)
+- `env.move(action)` return value was ignored in `train.py` — if the bird collided with a block on the first frame (resetting `bird.move = False` immediately), `done=True` was lost and the outer loop kept firing shots.
+- With tries at -1, `end_of_game()` checked `tries == 0` which was never true again, so the game ran for hundreds of shots until pigs died by sheer volume.
+- **Fix:** captured `reward, done = env.move(action)` in `train.py`; added `not done` guard to inner physics loop; changed `tries == 0` to `tries <= 0` in `end_of_game()` and loss penalty check.
+
+### Added `.gitignore`
+- Ignores `__pycache__/`, `*.pyc`, `*.pyo`, `*.pth`, `saved_models/`, `wandb/`, `.env`.
+
 ### Resolved merge conflicts
 Resolved merge conflicts in `DQN.py`, `Environment.py`, `Game.py`, `ai_agent.py`, `train.py` — kept local (constants.py-based) versions over hardcoded remote values.
 
