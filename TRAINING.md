@@ -70,7 +70,28 @@ $$\varepsilon = 0.01 + (1 - 0.01) \times e^{-\text{epoch} / 200000}$$
 | Shot misses (bird exits screen, no kill) | −1.0 |
 | Game over with pigs remaining | −5.0 |
 
-Reward is reset to 0 at the start of each `move()` call, so each step returns only the reward earned in that step.
+Reward is reset to 0 at the start of each new shot (`action is not None`), so rewards accumulate across all physics frames of one shot.
+
+---
+
+## Episode Score (wandb only, not used for training)
+
+| Event | Points |
+|---|---|
+| Bird fired | −10 |
+| Pig killed | +25 |
+| Win bonus | +50 |
+| Loss penalty | −25 |
+
+**Examples:**
+
+| Scenario | Shots | Pigs | Score |
+|---|---|---|---|
+| 1-shot win (2 pigs) | 1 | 2 | −10 + 50 + 50 = **90** |
+| 2-shot win (2 pigs) | 2 | 2 | −20 + 50 + 50 = **80** |
+| 3-shot win (2 pigs) | 3 | 2 | −30 + 50 + 50 = **70** |
+| 10-shot loss (0 pigs) | 10 | 0 | −100 − 25 = **−125** |
+| 5-shot loss (1 pig) | 5 | 1 | −50 + 25 − 25 = **−50** |
 
 ---
 
