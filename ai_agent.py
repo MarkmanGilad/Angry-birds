@@ -4,16 +4,17 @@ import torch
 import torch.nn as nn
 import numpy as np
 from DQN import DQN
+from constants import *
 from State import State
 
 
-epsilon_start = 1
-epsilon_final = 0.01
-epsiln_decay = 200000#ככל שמגדילים, יש יותר זמן אקראי
+epsilon_start = EPSILON_START
+epsilon_final = EPSILON_FINAL
+epsiln_decay = EPSILON_DECAY#ככל שמגדילים, יש יותר זמן אקראי
 
 # epochs = 1000
 # batch_size = 64
-gamma = 0.99 
+gamma = GAMMA 
 MSELoss = nn.MSELoss()
 class DQN_Agent:
     def __init__(self, parametes_path = None, train = True, env= None) -> None:
@@ -33,8 +34,8 @@ class DQN_Agent:
     def get_action (self, state_T, epoch = 0, events= None, train = True):
         epsilon = self.epsilon_greedy(epoch)
         rnd = random.random()
-        actionsx = torch.arange(10)
-        actionsy = torch.arange(10)
+        actionsx = torch.arange(ACTION_COMPONENTS)
+        actionsy = torch.arange(ACTION_COMPONENTS)
         if train and rnd < epsilon:
             return random.choice(actionsx),random.choice(actionsy)
         # xx, yy = torch.meshgrid(actionsx, actionsy, indexing="ij")
@@ -49,12 +50,12 @@ class DQN_Agent:
         return best_action
     
     def index_to_action(self, index):
-        x = index // 10
-        y = index % 10
+        x = index // ACTION_COMPONENTS
+        y = index % ACTION_COMPONENTS
         return x, y
 
     def action_to_index(self, action):
-        return action[0] * 10 + action[1]
+        return action[0] * ACTION_COMPONENTS + action[1]
 
     def get_actions (self, states, dones, train = True):
         actions = []

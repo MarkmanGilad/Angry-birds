@@ -1,12 +1,9 @@
 import numpy as np
 import torch
-# ייבוא הממדים לצורך נירמול
-from Graphic import WIDTH, HEIGHT 
+from constants import *
 
-max_pigs = 2
-max_blocks = 2
 class State:
-    def __init__(self, max_pigs=max_pigs, max_blocks=max_blocks):
+    def __init__(self, max_pigs=MAX_PIGS, max_blocks=MAX_BLOCKS):
         self.max_pigs = max_pigs
         self.max_blocks = max_blocks
     
@@ -34,10 +31,10 @@ class State:
             state_list += [
                 block.rect.bottomleft[0] / WIDTH, # x -- bottomleft
                 block.rect.bottomleft[1] / HEIGHT,# y - bottomleft
-                block.rect.width / 100.0,   # נניח רוחב מקסימלי סביר
-                block.rect.height / 100.0,  # נניח גובה מקסימלי סביר
-                block.angle / 360.0,        # נירמול זווית ל-[0,1]
-                block.hit / 2.0             # נירמול פגיעות (נהרס ב-2)
+                block.rect.width / BLOCK_SIZE_NORM,   # נניח רוחב מקסימלי סביר
+                block.rect.height / BLOCK_SIZE_NORM,  # נניח גובה מקסימלי סביר
+                block.angle / BLOCK_ANGLE_NORM,        # נירמול זווית ל-[0,1]
+                block.hit / BLOCK_HIT_NORM             # נירמול פגיעות (נהרס ב-2)
             ]
         
         # Fill remaining blocks

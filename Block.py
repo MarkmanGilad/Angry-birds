@@ -1,14 +1,14 @@
 import pygame
-from Graphic import *
+from constants import *
 
 class Block(pygame.sprite.Sprite):
-    def __init__(self, start_pos, width=20, height=60, color=BROWN):
+    def __init__(self, start_pos, width=BLOCK_DEFAULT_WIDTH, height=BLOCK_DEFAULT_HEIGHT, color=BROWN):
         super().__init__()
         self.width = width
         self.height = height
         self.color = color
 
-        self.angle = 360
+        self.angle = BLOCK_INITIAL_ANGLE
         self.original_image = pygame.Surface((width, height), pygame.SRCALPHA)
         self.original_image.fill(color)
 
@@ -24,7 +24,7 @@ class Block(pygame.sprite.Sprite):
         pass
 
     def rotate(self):
-        self.angle -= 3
+        self.angle -= BLOCK_ROTATE_SPEED
         self.image = pygame.transform.rotate(self.original_image, self.angle)
         old_midbottom = self.rect.midbottom
         self.rect = self.image.get_rect(midbottom=old_midbottom)
@@ -33,7 +33,7 @@ class Block(pygame.sprite.Sprite):
     def fall(self):
         if self.falling:
             x, y = self.rect.midbottom
-            self.vy += 1 # כוח כבידה
+            self.vy += GRAVITY # כוח כבידה
             y += self.vy
             self.rect.midbottom = (x, y)
         else:

@@ -5,8 +5,11 @@ import numpy as np
 from State import State
 
 
+from constants import *
+
+
 class ReplayBuffer:
-    def __init__(self, capacity=10000) -> None:
+    def __init__(self, capacity=REPLAY_BUFFER_CAPACITY) -> None:
         self.buffer = deque(maxlen=capacity)
 
     def push(self, state_T, action, reward, next_state_T, done):

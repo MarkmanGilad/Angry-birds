@@ -1,6 +1,6 @@
 import pygame
 from Bird import Bird
-from Graphic import *
+from constants import *
 from Block import Block
 from Pig import Pig
 import random
@@ -12,8 +12,8 @@ class Environment:
         self.bird = Bird()
         self.pigs = pygame.sprite.Group()
         self.blocks = pygame.sprite.Group()
-        self.tries = 3
-        self.level = 1
+        self.tries = INITIAL_TRIES
+        self.level = INITIAL_LEVEL
         self.screen = None
         self.reward=0
         self.steps_since_shot = 0
@@ -29,23 +29,23 @@ class Environment:
         self.blocks.add(block)
 
     def init_level(self, level_num):
-        self.tries = 3
+        self.tries = INITIAL_TRIES
         self.pigs.empty()
         self.blocks.empty()
 
-        num_buildings = 2
+        num_buildings = LEVEL_NUM_BUILDINGS
 
         for _ in range(num_buildings):
-            x = random.randint(250, 600)
+            x = random.randint(LEVEL_BUILDING_X_MIN, LEVEL_BUILDING_X_MAX)
             num_floors = 1
             
             # משתנה שיעזור לנו לדעת מה הגובה המצטבר של המבנה
-            current_top_y = 360 
+            current_top_y = GROUND_Y 
 
             for i in range(num_floors):
-                is_horizontal = random.random() < 0.3
-                width = 60 if is_horizontal else 20
-                height = 20 if is_horizontal else 60
+                is_horizontal = random.random() < LEVEL_HORIZONTAL_CHANCE
+                width = LEVEL_HORIZONTAL_WIDTH if is_horizontal else BLOCK_DEFAULT_WIDTH
+                height = LEVEL_HORIZONTAL_HEIGHT if is_horizontal else BLOCK_DEFAULT_HEIGHT
                 
                 # מיקום הבלוק: התחתית שלו היא ה-top של הקומה הקודמת
                 block = Block((x, current_top_y), width=width, height=height)
@@ -66,13 +66,13 @@ class Environment:
         self.background = pygame.image.load("img/background.webp")
         self.background = pygame.transform.scale(self.background, (WIDTH, HEIGHT))
         self.rug = pygame.image.load("img/rug.png")
-        self.rug = pygame.transform.scale(self.rug, (60, 60))
+        self.rug = pygame.transform.scale(self.rug, (RUG_SIZE, RUG_SIZE))
         self.init_level(self.level)
 
     def calculate_ballistic_distance(self,x0, y0,action, x, y):
-        vx=(action[0] + 1) * 5
-        vy=(action[1] - 1) * (-5)
-        yp=y0+vy*(x-x0)/vx +0.5*((x-x0)**2)/vx**2
+        vx=(action[0] + 1) * VX_SCALE
+        vy=(action[1] - 1) * VY_SCALE
+        yp=y0+vy*(x-x0)/vx + (GRAVITY/2)*((x-x0)**2)/vx**2
         if abs(y-yp)<1: return 1
         return abs(y-yp)
         
@@ -94,30 +94,27 @@ class Environment:
     def move(self, action):
         # — אם יש פעולה (action לא None) — בצע ירייה / התחל תנועה
         
+        self.reward = 0
         done = False
         pigs_num_before_step = len(self.pigs) # כמות החזירים בתחילת הצעד הנוכחי
         
         if action is not None:
             if not self.bird.move:
                 # שמירת כמות החזירים ברגע הירייה כדי לבדוק פגיעה בהמשך
-                pigs_before_shot = len(self.pigs)
+                self.pigs_before_shot = len(self.pigs)
                 
-                self.bird.vx = (action[0] + 1) * 5
-                self.bird.vy = (action[1] - 1) * (-5)
+                self.bird.vx = (action[0] + 1) * VX_SCALE
+                self.bird.vy = (action[1] - 1) * VY_SCALE
                 self.bird.move = True
                 
-                # הורדת ניקוד על עצם הירייה (כפי שהיה בקוד שלך)
-                self.reward -= 1 
+                self.reward -= REWARD_SHOOT 
                 self.tries -= 1
-                
-                for pig in list(self.pigs):
-                    self.reward += 2 / self.calculate_ballistic_distance(45, 315, action, pig.rect.midbottom[0], pig.rect.midbottom[1])
 
         # תנועת הציפור
         if self.bird.move:
             check = True
             for block in list(self.blocks):
-                if 270 < block.angle < 360:
+                if 270 < block.angle < BLOCK_INITIAL_ANGLE:
                     check = False
             if check:
                 self.bird.Move()
@@ -137,10 +134,9 @@ class Environment:
                     break
             if not pig.stay:
                 pig.Fall()
-            if pig.rect.bottom >= 360:
+            if pig.rect.bottom >= GROUND_Y:
                 pig.stay = True
                 pig.kill()
-                self.reward += 50
 
         # --- עדכון בלוקים: לוגיקת נפילה משופרת ---
         
@@ -152,8 +148,8 @@ class Environment:
             block.falling = True
             
             # אם הבלוק על הרצפה - הוא יציב
-            if block.rect.bottom >= 360:
-                block.rect.bottom = 360 # הצמדה לרצפה
+            if block.rect.bottom >= GROUND_Y:
+                block.rect.bottom = GROUND_Y # הצמדה לרצפה
                 block.falling = False
             else:
                 # אם הוא לא על הרצפה, נבדוק אם הוא יושב על בלוק אחר שכבר קבענו שהוא לא נופל
@@ -164,7 +160,7 @@ class Environment:
                     # בדיקה אם התחתית של הבלוק הנוכחי נוגעת בחלק העליון של הבלוק השני
                     if pygame.sprite.collide_mask(block, other):
                         # בדיקה שהבלוק מעל השני (עם טווח טעות קטן)
-                        if abs(block.rect.bottom - other.rect.top) < 10:
+                        if abs(block.rect.bottom - other.rect.top) < BLOCK_SNAP_TOLERANCE:
                             block.falling = False
                             # הצמדה מדויקת כדי למנוע "רעידות"
                             block.rect.bottom = other.rect.top
@@ -180,51 +176,50 @@ class Environment:
             if pygame.sprite.collide_mask(block, self.bird):
                 for pig in list(self.pigs):
                     if pygame.sprite.collide_mask(block, pig):
-                        self.reward += 3
-                block.rect.midbottom = (block.rect.midbottom[0] + self.bird.vx * 2 + 30,
+                        self.reward += REWARD_BLOCK_PIG_COLLIDE
+                block.rect.midbottom = (block.rect.midbottom[0] + self.bird.vx * 2 + BIRD_SIZE,
                                         block.rect.midbottom[1])
                 # סימון הבלוק שיתחיל ליפול/להסתובב אחרי המכה
                 block.angle -= 1 
                 block.hit += 1
-                self.bird.rect.midbottom = (45, 315)
+                self.bird.rect.midbottom = (BIRD_START_X, BIRD_START_Y)
                 self.bird.move = False
 
             # סיבוב בלוקים פגועים
-            if 270 < block.angle < 360:
+            if 270 < block.angle < BLOCK_INITIAL_ANGLE:
                 block.rotate()
             
-            if block.hit >= 2:
+            if block.hit >= BLOCK_MAX_HITS:
                 block.kill()    
 
         if not self.is_stable():
             self.steps_since_shot += 1
         # בדיקה אם עבר יותר מדי זמן ללא התייצבות
-        if self.steps_since_shot > 100:
+        if self.steps_since_shot > MAX_STEPS_SINCE_SHOT:
             self.force_stabilize_blocks()
             self.bird.move = False
-            self.bird.rect.midbottom = (45, 315)
+            self.bird.rect.midbottom = (BIRD_START_X, BIRD_START_Y)
             self.steps_since_shot = 0        
         # ציפור נופלת לקרקע (פספוס מוחלט)
-        if self.bird.rect.midbottom[1] > 400 or self.bird.rect.midbottom[0] > 700:
+        if self.bird.rect.midbottom[1] > BIRD_OUT_BOTTOM or self.bird.rect.midbottom[0] > BIRD_OUT_RIGHT:
             if hasattr(self, 'pigs_before_shot'):
-                if len(self.pigs) == pigs_before_shot:
-                    self.reward -= 20 # קנס על ירייה שלא פגעה בחזיר ויצאה מהמסך
-                delattr(self, 'pigs_before_shot')
+                if len(self.pigs) == self.pigs_before_shot:
+                    self.reward += REWARD_MISS_PENALTY
+                del self.pigs_before_shot
             
-            self.bird.rect.midbottom = (45, 315)
+            self.bird.rect.midbottom = (BIRD_START_X, BIRD_START_Y)
             self.bird.move = False
 
         next_state = self.get_state()
         # חישוב בונוס על חזירים שנהרגו בפריים הזה
-        self.reward += (pigs_num_before_step - len(self.pigs)) * 100
+        self.reward += (pigs_num_before_step - len(self.pigs)) * REWARD_PIG_KILL
         if len(self.pigs) == 0:
-            self.reward+=300
+            self.reward+=REWARD_ALL_PIGS_DEAD
         if self.end_of_game(): 
             done = True
         if self.tries == 0 and len(self.pigs) > 0: 
-            self.reward = -300
-        normalized_reward = max(min(self.reward, 5), -5)     
-        return normalized_reward, done
+            self.reward = REWARD_LOSS_PENALTY
+        return self.reward, done
     
     def is_stable(self):
         # בדיקה אם הציפור בתנועה
@@ -236,7 +231,7 @@ class Environment:
                 return False
         # בדיקה אם יש בלוק שנופל או מסתובב
         for block in self.blocks:
-            if block.falling or (block.angle < 360 and block.angle > 270):
+            if block.falling or (block.angle < BLOCK_INITIAL_ANGLE and block.angle > 270):
                 return False
         return True
     
@@ -248,19 +243,25 @@ class Environment:
         # draw bird on screen
                 
         self.screen.blit(self.background,(0,0))
-        self.screen.blit(self.rug,(10,296))
+        self.screen.blit(self.rug,(RUG_X,RUG_Y))
         self.bird.draw(self.screen)
         self.blocks.draw(self.screen)
         self.pigs.draw(self.screen)
+        self.draw_tries()
         
         pygame.display.update()
         self.clock.tick(FPS)
+
+    def draw_tries(self):
+        font = pygame.font.SysFont("Arial", 24)
+        text = font.render(f"Tries: {self.tries}", True, BLACK)
+        self.screen.blit(text, (10, 10))
 
     def end_of_game (self):
         if self.bird.move:
             return False
         for block in self.blocks:
-            if block.angle<360 and block.angle>270:
+            if block.angle<BLOCK_INITIAL_ANGLE and block.angle>270:
                 return False
         if len(self.pigs)==0:
             self.reward=0
@@ -272,8 +273,8 @@ class Environment:
     
     def reset(self):
         # אתחל את הסביבה מחדש
-        self.level = 1
-        self.tries = 3
+        self.level = INITIAL_LEVEL
+        self.tries = INITIAL_TRIES
         self.pigs.empty()
         self.blocks.empty()
         # אתחל HUD / ריסט של bird

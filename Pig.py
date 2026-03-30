@@ -1,8 +1,9 @@
 import pygame
+from constants import *
 
 class Pig(pygame.sprite.Sprite):
     image=pygame.image.load("img/pig.webp")
-    image=pygame.transform.scale(image,(40,40))
+    image=pygame.transform.scale(image,(PIG_SIZE,PIG_SIZE))
     
     def __init__(self, pos):
         super().__init__()
@@ -18,7 +19,7 @@ class Pig(pygame.sprite.Sprite):
         x,y=self.rect.midbottom
         y += self.vy
         self.rect.midbottom=x,y
-        self.vy+=1
-        if y > 1000: 
+        self.vy+=GRAVITY
+        if y > PIG_FALL_MAX_Y: 
             self.vy = 0
-            self.rect.midbottom = (x, 1000)
+            self.rect.midbottom = (x, PIG_FALL_MAX_Y)

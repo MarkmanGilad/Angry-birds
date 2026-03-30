@@ -3,16 +3,39 @@ from ai_agent import DQN_Agent
 from Environment import Environment
 from ReplayBuffer import ReplayBuffer
 from State import State
-import matplotlib.pyplot as plt
+from constants import *
+# import matplotlib.pyplot as plt
 import numpy as np
+import wandb
 
 import torch 
-epochs = 1000001
-C = 500
-batch = 128
-path = "Data/DQN_PARAM_Advanced_7.pth"
+
+num = 1
+
+epochs = TRAIN_EPOCHS
+C = TARGET_UPDATE_INTERVAL
+batch = TRAIN_BATCH_SIZE
+path = DEFAULT_MODEL_PATH
 
 def train():
+    wandb.init(
+        project="angry-birds-dqn",
+        name=f"test_{num}",
+        config={
+            "epochs": TRAIN_EPOCHS,
+            "target_update_interval": TARGET_UPDATE_INTERVAL,
+            "batch_size": TRAIN_BATCH_SIZE,
+            "lr": TRAIN_LR,
+            "grad_max_norm": GRAD_MAX_NORM,
+            "win_threshold": WIN_THRESHOLD,
+            "gamma": GAMMA,
+            "epsilon_start": EPSILON_START,
+            "epsilon_final": EPSILON_FINAL,
+            "epsilon_decay": EPSILON_DECAY,
+            "num": num,
+        },
+    )
+
     state = State()
     env = Environment()
     env.init_display()
@@ -21,7 +44,7 @@ def train():
     Q = player.DQN
     Q_hat: DQN = Q.copy()
     Q_hat.train = False
-    optim = torch.optim.Adam(Q.parameters(), lr=0.00001)
+    optim = torch.optim.Adam(Q.parameters(), lr=TRAIN_LR)
     
     success_rate = []
     # --- הוספה: רשימות למעקב אחר loss ---
@@ -45,7 +68,7 @@ def train():
             
             while env.bird.move or not env.is_stable():
                 reward, done = env.move(None)
-                #env.render()
+                env.render()
             next_state_T = state.toTensor(env)
             
             pigs = len(env.pigs)
@@ -54,7 +77,7 @@ def train():
             replay.push(state_T, action, reward, next_state_T, done)
             state_T = next_state_T.clone()
             
-            if epoch < 500:
+            if epoch < TARGET_UPDATE_INTERVAL:
                 continue
                 
             states, actions, rewards, next_states, dones = replay.sample(batch)
@@ -70,8 +93,10 @@ def train():
             current_epoch_losses.append(loss.item())
             # ------------------------------------
             
+            wandb.log({"step_loss": loss.item()})
+            
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(Q.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(Q.parameters(), max_norm=GRAD_MAX_NORM)
             optim.step()
             optim.zero_grad()
 
@@ -89,34 +114,43 @@ def train():
             else:
                 loss_history.append(0)
             
-            print("epoch:", epoch, "wins:", success_rate[int(epoch/C-1)], "avg loss:", loss_history[-1])
-            if success_rate[int(epoch/C-1)] >0.95*C:
+            wins = success_rate[int(epoch/C-1)]
+            avg_loss = loss_history[-1]
+            print("epoch:", epoch, "wins:", wins, "avg loss:", avg_loss)
+            wandb.log({
+                "epoch": epoch,
+                "interval_wins": wins,
+                "interval_win_rate": wins / C,
+                "interval_avg_loss": avg_loss,
+            })
+            if wins > WIN_THRESHOLD*C:
                 player.save_param(path)
                 good = True
     if not good:    
         player.save_param(path)
-    # עדכון הקריאה לפונקציית הציור
-    plot_results(success_rate, loss_history)
+    wandb.finish()
+    # # עדכון הקריאה לפונקציית הציור
+    # plot_results(success_rate, loss_history)
 
-# --- עדכון פונקציית הגרפים ---
-def plot_results(success_rate, loss_history):
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
-    
-    # גרף ניצחונות
-    ax1.plot(success_rate, color='green', label='Wins')
-    ax1.set_title('Wins per Interval')
-    ax1.set_xlabel(f'Intervals (per {C} epochs)')
-    ax1.set_ylabel('Number of Wins')
-    ax1.grid(True)
-    ax1.legend()
-
-    # גרף Loss
-    ax2.plot(loss_history, color='red', label='Loss')
-    ax2.set_title('Average Loss per Interval')
-    ax2.set_xlabel(f'Intervals (per {C} epochs)')
-    ax2.set_ylabel('Loss Value')
-    ax2.grid(True)
-    ax2.legend()
+# # --- עדכון פונקציית הגרפים ---
+# def plot_results(success_rate, loss_history):
+#     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
+#     
+#     # גרף ניצחונות
+#     ax1.plot(success_rate, color='green', label='Wins')
+#     ax1.set_title('Wins per Interval')
+#     ax1.set_xlabel(f'Intervals (per {C} epochs)')
+#     ax1.set_ylabel('Number of Wins')
+#     ax1.grid(True)
+#     ax1.legend()
+# 
+#     # גרף Loss
+#     ax2.plot(loss_history, color='red', label='Loss')
+#     ax2.set_title('Average Loss per Interval')
+#     ax2.set_xlabel(f'Intervals (per {C} epochs)')
+#     ax2.set_ylabel('Loss Value')
+#     ax2.grid(True)
+#     ax2.legend()
 
     plt.tight_layout()
     plt.show()

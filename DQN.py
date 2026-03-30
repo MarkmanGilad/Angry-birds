@@ -5,15 +5,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from Environment import Environment
+from constants import *
 from State import *
 import os
 HuberLoss = nn.SmoothL1Loss()
 env=Environment()
-input_size = 1 + 2*max_pigs + 6*max_blocks
-layer1 = 128
-layer2 = 128
-output_size = 100
-gamma = 0.99 
+input_size = 1 + 2*MAX_PIGS + 6*MAX_BLOCKS
+layer1 = DQN_LAYER1
+layer2 = DQN_LAYER2
+output_size = NUM_ACTIONS
+gamma = GAMMA 
 MSELoss = nn.MSELoss()
 class DQN(nn.Module):
     def __init__(self) -> None:
