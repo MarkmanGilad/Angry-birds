@@ -48,6 +48,8 @@ def train():
     
     success_rate = []
     current_epoch_losses = []
+    best_score = float('-inf')
+    best_model_path = f"Data/best_model_test_{num}.pth"
     good = False
     for epoch in range(epochs):
         if epoch % C == 0: 
@@ -135,6 +137,11 @@ def train():
         
         win_str = "WIN" if pigs == 0 else "LOSS"
         print(f"[Test {num}] Epoch {epoch} | {win_str} | Score: {episode_score} | Reward: {episode_reward_sum:.2f} | Loss: {avg_ep_loss:.4f} | Pigs killed: {pigs_killed}/{initial_pigs} | Tries left: {tries} | Shots: {shots_fired} | Eps: {epsilon:.4f}")
+
+        if episode_score > best_score:
+            best_score = episode_score
+            player.save_param(best_model_path)
+            print(f"  >> New best score: {best_score} — saved to {best_model_path}")
             
         if epoch % C == 0 and epoch != 0:
             Q_hat.load_state_dict(Q.state_dict())
