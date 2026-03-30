@@ -58,10 +58,10 @@ class Environment:
             # current_top_y כרגע מייצג את ה-top של הבלוק העליון ביותר
             self.init_pigs((x, current_top_y))
 
-    def init_display(self):
+    def init_display(self, title="Angry Birds"):
         pygame.init()
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
-        pygame.display.set_caption("Angry Birds")
+        pygame.display.set_caption(title)
         self.clock = pygame.time.Clock()
         self.background = pygame.image.load("img/background.webp")
         self.background = pygame.transform.scale(self.background, (WIDTH, HEIGHT))
@@ -94,12 +94,13 @@ class Environment:
     def move(self, action):
         # — אם יש פעולה (action לא None) — בצע ירייה / התחל תנועה
         
-        self.reward = 0
         done = False
         pigs_num_before_step = len(self.pigs) # כמות החזירים בתחילת הצעד הנוכחי
         
         if action is not None:
             if not self.bird.move:
+                # איפוס reward רק כשמתחילים ירייה חדשה
+                self.reward = 0
                 # שמירת כמות החזירים ברגע הירייה כדי לבדוק פגיעה בהמשך
                 self.pigs_before_shot = len(self.pigs)
                 
@@ -212,9 +213,10 @@ class Environment:
 
         next_state = self.get_state()
         # חישוב בונוס על חזירים שנהרגו בפריים הזה
-        self.reward += (pigs_num_before_step - len(self.pigs)) * REWARD_PIG_KILL
-        if len(self.pigs) == 0:
-            self.reward+=REWARD_ALL_PIGS_DEAD
+        pigs_killed_this_frame = pigs_num_before_step - len(self.pigs)
+        self.reward += pigs_killed_this_frame * REWARD_PIG_KILL
+        if pigs_killed_this_frame > 0 and len(self.pigs) == 0:
+            self.reward += REWARD_ALL_PIGS_DEAD
         if self.end_of_game(): 
             done = True
         if self.tries == 0 and len(self.pigs) > 0: 
@@ -249,6 +251,7 @@ class Environment:
         self.pigs.draw(self.screen)
         self.draw_tries()
         
+        pygame.event.pump()
         pygame.display.update()
         self.clock.tick(FPS)
 
@@ -264,10 +267,8 @@ class Environment:
             if block.angle<BLOCK_INITIAL_ANGLE and block.angle>270:
                 return False
         if len(self.pigs)==0:
-            self.reward=0
             return True
         if self.tries==0: 
-            self.reward=0
             return True
         return False
     

@@ -58,6 +58,3 @@ class DQN(nn.Module):
         
         # שימוש ב-Huber Loss במקום MSE
         return HuberLoss(Q_value, Q_new)
-
-    def __call__(self, states, actions=None):
-        return self.forward(states)

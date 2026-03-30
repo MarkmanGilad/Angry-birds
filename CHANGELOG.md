@@ -1,5 +1,51 @@
 # Changelog
 
+## 2026-03-30 (session 2)
+
+### Added wandb logging to `train.py`
+- Added `import wandb` and `num = 1` variable at the top to name each training run (`test_{num}`).
+- `wandb.init()` logs all hyperparameters from `constants.py` (epochs, lr, gamma, epsilon, etc.).
+- Per-episode logging: `episode/score` (game score), `episode/reward_sum` (training reward), `episode/loss` (avg network loss).
+- Per-interval logging: `interval_wins`, `interval_win_rate`, `interval_avg_loss` every `C` epochs.
+- `wandb.finish()` called at end of training.
+- Commented out `matplotlib` import and `plot_results()` function.
+- Window caption shows test number during training (`Angry Birds - Test {num}`).
+
+### Added episode scoring system
+- Scoring constants in `constants.py`: `SCORE_BIRD_FIRED=-10`, `SCORE_PIG_KILLED=+25`, `SCORE_WIN=+50`, `SCORE_LOSS=-25`.
+- Score distinguishes win efficiency: 1-shot win = 90, 2-shot win = 80, 10-shot loss = -125.
+- Commented out `matplotlib` import and `plot_results()` function.
+
+### Fixed reward accumulation across shot frames
+- `self.reward = 0` was at top of every `move()` call, resetting reward each physics frame. Only the last frame's reward survived — shot cost, pig kills mid-flight, and block-pig collide rewards were all lost.
+- Moved `self.reward = 0` inside `action is not None` block so it only resets when a new shot starts. Rewards now accumulate across all simulation frames of one shot.
+- `REWARD_ALL_PIGS_DEAD` was firing on every frame after pigs were all dead. Now only fires on the frame the last pig actually dies.
+
+### Fixed `end_of_game()` zeroing reward
+- `end_of_game()` had `self.reward = 0` on both win and loss branches, wiping out terminal rewards (pig kill, all-pigs-dead, loss penalty) before they were returned. Removed.
+
+### Added episode print summary
+- Each episode prints: test num, epoch, WIN/LOSS, score, reward, loss, pigs killed, tries left, shots fired, epsilon.
+
+### Added `pygame.event.pump()` to `render()`
+- Windows marked the game window as "not responding" during training because the event queue was never drained. Added `pygame.event.pump()` in `render()`.
+
+### Fixed DDQN implementation (critical bug)
+The training loop was broken — it was **not** a correct DQN or DDQN:
+- `DQN.__call__` had a custom override that **ignored the `actions` parameter** and returned all 100 Q-values. Both `Q(states, actions)` and `Q_hat(next_states, next_actions)` returned shape `[batch, 100]` instead of the Q-value for the specific action.
+- The Huber loss was computed over all 100 outputs against the same broadcasted reward target, training every output toward the same value.
+- `player.get_actions()` ran one-by-one inference for each sample in the batch (slow and unnecessary).
+
+**Fix:**
+- Removed the broken `DQN.__call__` override — `nn.Module.__call__` now properly calls `forward`.
+- **Q(s, a)**: `Q(states)` → `gather` at the taken action index → `[batch, 1]`.
+- **DDQN target**: online net picks best next action via `argmax`, target net evaluates it via `gather` → `[batch, 1]`.
+- Loss now compares matching scalar Q-values per sample, as intended.
+- Eliminated the slow `player.get_actions()` loop from the training step.
+
+### Resolved merge conflicts
+Resolved merge conflicts in `DQN.py`, `Environment.py`, `Game.py`, `ai_agent.py`, `train.py` — kept local (constants.py-based) versions over hardcoded remote values.
+
 ## 2026-03-30
 
 ### Added `constants.py`

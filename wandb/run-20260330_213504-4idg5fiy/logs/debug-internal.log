@@ -1,0 +1,11 @@
+{"time":"2026-03-30T21:35:04.5351753+03:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"C:\\Users\\Gilad\\Downloads\\Angry-birds (2)\\Angry-birds\\wandb\\run-20260330_213504-4idg5fiy\\logs\\debug-core.log"}
+{"time":"2026-03-30T21:35:05.8255948+03:00","level":"INFO","msg":"created new stream","id":"4idg5fiy"}
+{"time":"2026-03-30T21:35:05.8262142+03:00","level":"INFO","msg":"stream: started","id":"4idg5fiy"}
+{"time":"2026-03-30T21:35:05.8262142+03:00","level":"INFO","msg":"handler: started","stream_id":"4idg5fiy"}
+{"time":"2026-03-30T21:35:05.8262142+03:00","level":"INFO","msg":"writer: Do: started","stream_id":"4idg5fiy"}
+{"time":"2026-03-30T21:35:05.8262142+03:00","level":"INFO","msg":"sender: started","stream_id":"4idg5fiy"}
+{"time":"2026-03-30T21:35:06.9064661+03:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2026-03-30T21:35:21.9360662+03:00","level":"ERROR","msg":"monitor: error sampling metrics: Incorrect function."}
+{"time":"2026-03-30T21:35:36.9226539+03:00","level":"ERROR","msg":"monitor: error sampling metrics: Incorrect function."}
+{"time":"2026-03-30T21:35:51.9440198+03:00","level":"ERROR","msg":"monitor: error sampling metrics: Incorrect function."}
+{"time":"2026-03-30T21:36:06.9008482+03:00","level":"ERROR","msg":"monitor: error sampling metrics: Incorrect function."}

@@ -1,0 +1,22 @@
+2026-03-30 22:04:06,007 INFO    MainThread:15828 [wandb_setup.py:_flush():68] Current SDK version is 0.19.10
+2026-03-30 22:04:06,007 INFO    MainThread:15828 [wandb_setup.py:_flush():68] Configure stats pid to 15828
+2026-03-30 22:04:06,008 INFO    MainThread:15828 [wandb_setup.py:_flush():68] Loading settings from C:\Users\Gilad\.config\wandb\settings
+2026-03-30 22:04:06,008 INFO    MainThread:15828 [wandb_setup.py:_flush():68] Loading settings from C:\Users\Gilad\Downloads\Angry-birds (2)\Angry-birds\wandb\settings
+2026-03-30 22:04:06,008 INFO    MainThread:15828 [wandb_setup.py:_flush():68] Loading settings from environment variables
+2026-03-30 22:04:06,008 INFO    MainThread:15828 [wandb_init.py:setup_run_log_directory():724] Logging user logs to C:\Users\Gilad\Downloads\Angry-birds (2)\Angry-birds\wandb\run-20260330_220405-sr3i6zi9\logs\debug.log
+2026-03-30 22:04:06,009 INFO    MainThread:15828 [wandb_init.py:setup_run_log_directory():725] Logging internal logs to C:\Users\Gilad\Downloads\Angry-birds (2)\Angry-birds\wandb\run-20260330_220405-sr3i6zi9\logs\debug-internal.log
+2026-03-30 22:04:06,009 INFO    MainThread:15828 [wandb_init.py:init():852] calling init triggers
+2026-03-30 22:04:06,009 INFO    MainThread:15828 [wandb_init.py:init():857] wandb.init called with sweep_config: {}
+config: {'epochs': 1000001, 'target_update_interval': 50, 'batch_size': 128, 'lr': 1e-05, 'grad_max_norm': 1.0, 'win_threshold': 0.95, 'gamma': 0.99, 'epsilon_start': 1, 'epsilon_final': 0.01, 'epsilon_decay': 100, 'num': 5, '_wandb': {}}
+2026-03-30 22:04:06,009 INFO    MainThread:15828 [wandb_init.py:init():893] starting backend
+2026-03-30 22:04:06,009 INFO    MainThread:15828 [wandb_init.py:init():897] sending inform_init request
+2026-03-30 22:04:06,022 INFO    MainThread:15828 [backend.py:_multiprocessing_setup():101] multiprocessing start_methods=spawn, using: spawn
+2026-03-30 22:04:06,022 INFO    MainThread:15828 [wandb_init.py:init():907] backend started and connected
+2026-03-30 22:04:06,023 INFO    MainThread:15828 [wandb_init.py:init():1002] updated telemetry
+2026-03-30 22:04:06,051 INFO    MainThread:15828 [wandb_init.py:init():1026] communicating run to backend with 90.0 second timeout
+2026-03-30 22:04:06,758 INFO    MainThread:15828 [wandb_init.py:init():1101] starting run threads in backend
+2026-03-30 22:04:06,868 INFO    MainThread:15828 [wandb_run.py:_console_start():2566] atexit reg
+2026-03-30 22:04:06,868 INFO    MainThread:15828 [wandb_run.py:_redirect():2414] redirect: wrap_raw
+2026-03-30 22:04:06,868 INFO    MainThread:15828 [wandb_run.py:_redirect():2483] Wrapping output streams.
+2026-03-30 22:04:06,868 INFO    MainThread:15828 [wandb_run.py:_redirect():2506] Redirects installed.
+2026-03-30 22:04:06,872 INFO    MainThread:15828 [wandb_init.py:init():1147] run started, returning control to user process

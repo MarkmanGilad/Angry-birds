@@ -10,7 +10,7 @@ import wandb
 
 import torch 
 
-num = 1
+num = 11
 
 epochs = TRAIN_EPOCHS
 C = TARGET_UPDATE_INTERVAL
@@ -20,7 +20,7 @@ path = DEFAULT_MODEL_PATH
 def train():
     wandb.init(
         project="angry-birds-dqn",
-        name=f"test_{num}",
+        name=f"angry-birds_{num}",
         config={
             "epochs": TRAIN_EPOCHS,
             "target_update_interval": TARGET_UPDATE_INTERVAL,
@@ -38,7 +38,7 @@ def train():
 
     state = State()
     env = Environment()
-    env.init_display()
+    env.init_display(title=f"Angry Birds - Test {num}")
     player = DQN_Agent(env=env)
     replay = ReplayBuffer()
     Q = player.DQN
@@ -47,10 +47,7 @@ def train():
     optim = torch.optim.Adam(Q.parameters(), lr=TRAIN_LR)
     
     success_rate = []
-    # --- הוספה: רשימות למעקב אחר loss ---
-    loss_history = []
-    current_epoch_losses = [] 
-    # -----------------------------------
+    current_epoch_losses = []
     good = False
     for epoch in range(epochs):
         if epoch % C == 0: 
@@ -58,21 +55,33 @@ def train():
         
         env.reset()
         pigs = len(env.pigs)
+        initial_pigs = pigs
         tries = env.tries
-        print(epoch, end="\r")
+        episode_score = 0
+        episode_reward_sum = 0
+        shots_fired = 0
+        pigs_killed = 0
+        episode_losses = []
         state_T=state.toTensor(env)
         done = False
         while not done: # nor done:
             action = player.get_action(state_T, epoch=epoch, train=True)
             env.move(action)
+            shots_fired += 1
+            episode_score += SCORE_BIRD_FIRED
             
             while env.bird.move or not env.is_stable():
                 reward, done = env.move(None)
                 env.render()
             next_state_T = state.toTensor(env)
             
-            pigs = len(env.pigs)
+            new_pigs = len(env.pigs)
+            killed_this_shot = pigs - new_pigs
+            pigs_killed += killed_this_shot
+            episode_score += killed_this_shot * SCORE_PIG_KILLED
+            pigs = new_pigs
             tries = env.tries
+            episode_reward_sum += reward
             
             replay.push(state_T, action, reward, next_state_T, done)
             state_T = next_state_T.clone()
@@ -81,19 +90,27 @@ def train():
                 continue
                 
             states, actions, rewards, next_states, dones = replay.sample(batch)
-            Q_values = Q(states, actions)
-            next_actions = player.get_actions(next_states, dones, train=True)
+            
+            # --- DDQN ---
+            # Q(s, a) for the actions actually taken
+            all_Q = Q(states)                          # [batch, 100]
+            action_indices = (actions[:, 0] * ACTION_COMPONENTS + actions[:, 1]).long()  # [batch]
+            Q_values = all_Q.gather(1, action_indices.unsqueeze(1))  # [batch, 1]
             
             with torch.no_grad():
-                Q_hat_Values = Q_hat(next_states, next_actions)
+                # Online net selects best action for next state
+                next_Q_online = Q(next_states)                      # [batch, 100]
+                next_best_indices = next_Q_online.argmax(dim=1, keepdim=True)  # [batch, 1]
+                # Target net evaluates that action
+                next_Q_target = Q_hat(next_states)                  # [batch, 100]
+                Q_hat_Values = next_Q_target.gather(1, next_best_indices)  # [batch, 1]
             
             loss = Q.loss(Q_values, rewards, Q_hat_Values, dones)
             
             # --- הוספה: שמירת ערך ה-loss הנוכחי ---
             current_epoch_losses.append(loss.item())
+            episode_losses.append(loss.item())
             # ------------------------------------
-            
-            wandb.log({"step_loss": loss.item()})
             
             loss.backward()
             torch.nn.utils.clip_grad_norm_(Q.parameters(), max_norm=GRAD_MAX_NORM)
@@ -102,30 +119,26 @@ def train():
 
         if pigs == 0: 
             success_rate[int(epoch/C)] += 1
+            episode_score += SCORE_WIN
+        elif tries == 0:
+            episode_score += SCORE_LOSS
+        
+        epsilon = player.epsilon_greedy(epoch)
+        episode_log = {
+            "episode/score": episode_score,
+            "episode/reward_sum": episode_reward_sum,
+        }
+        avg_ep_loss = sum(episode_losses) / len(episode_losses) if episode_losses else 0
+        if episode_losses:
+            episode_log["episode/loss"] = avg_ep_loss
+        wandb.log(episode_log, step=epoch)
+        
+        win_str = "WIN" if pigs == 0 else "LOSS"
+        print(f"[Test {num}] Epoch {epoch} | {win_str} | Score: {episode_score} | Reward: {episode_reward_sum:.2f} | Loss: {avg_ep_loss:.4f} | Pigs killed: {pigs_killed}/{initial_pigs} | Tries left: {tries} | Shots: {shots_fired} | Eps: {epsilon:.4f}")
             
         if epoch % C == 0 and epoch != 0:
             Q_hat.load_state_dict(Q.state_dict())
-            
-            # --- הוספה: חישוב ממוצע ה-loss לבלוק של 500/1000 איטרציות ---
-            if current_epoch_losses:
-                avg_loss = sum(current_epoch_losses) / len(current_epoch_losses)
-                loss_history.append(avg_loss)
-                current_epoch_losses = [] # איפוס לרשימה הבאה
-            else:
-                loss_history.append(0)
-            
-            wins = success_rate[int(epoch/C-1)]
-            avg_loss = loss_history[-1]
-            print("epoch:", epoch, "wins:", wins, "avg loss:", avg_loss)
-            wandb.log({
-                "epoch": epoch,
-                "interval_wins": wins,
-                "interval_win_rate": wins / C,
-                "interval_avg_loss": avg_loss,
-            })
-            if wins > WIN_THRESHOLD*C:
-                player.save_param(path)
-                good = True
+            current_epoch_losses = []
     if not good:    
         player.save_param(path)
     wandb.finish()
@@ -152,7 +165,7 @@ def train():
 #     ax2.grid(True)
 #     ax2.legend()
 
-    plt.tight_layout()
-    plt.show()
+    # plt.tight_layout()
+    # plt.show()
 if __name__ == "__main__":
     train()
