@@ -10,7 +10,7 @@ import wandb
 
 import torch 
 
-num = 11
+num = 12
 
 epochs = TRAIN_EPOCHS
 C = TARGET_UPDATE_INTERVAL
